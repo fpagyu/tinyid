@@ -10,6 +10,14 @@ type IdService struct {
 	lock sync.RWMutex
 }
 
+func NewIdService(info *IdInfo, src IdSource) *IdService {
+	segment := &Segment{
+		src: src,
+	}
+	segment.setIdInfo(info)
+	return &IdService{seg: segment}
+}
+
 func (id *IdService) updateSegment() {
 	id.lock.Lock()
 	defer id.lock.Unlock()

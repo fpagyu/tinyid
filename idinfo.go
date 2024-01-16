@@ -20,12 +20,3 @@ func (info *IdInfo) MinId() int64 {
 		return v
 	}
 }
-
-func (info IdInfo) NewIdService(src IdSource) *IdService {
-	segment := &Segment{
-		src: src,
-	}
-	segment.setIdInfo(&info)
-
-	return &IdService{seg: segment}
-}

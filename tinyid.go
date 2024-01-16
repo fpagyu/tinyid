@@ -1,7 +1,9 @@
 package tinyid
 
 import (
+	"database/sql"
 	"fmt"
+	"sync"
 )
 
 var defaultTinyid = new(TinyId)
@@ -11,36 +13,46 @@ func SetDefault(cli *TinyId) {
 }
 
 type TinyId struct {
-	services map[string]*IdService
+	idsource IdSource
+	services sync.Map
+}
+
+func (cli *TinyId) SetIdSource(src IdSource) {
+	cli.idsource = src
 }
 
 func (cli *TinyId) Service(biz string) *IdService {
-	if len(cli.services) > 0 {
-		s, _ := cli.services[biz]
-		return s
+	if s, ok := cli.services.Load(biz); ok {
+		return s.(*IdService)
 	}
 
 	return nil
 }
 
-func (cli *TinyId) AddService(s *IdService) error {
-	if s.seg == nil || !s.seg.checkInfo() {
-		return fmt.Errorf("invalid id service: biz invalid")
+func (cli *TinyId) AddService(biz string) (*IdService, error) {
+	if biz == "" {
+		return nil, fmt.Errorf("biz cannot be empty")
 	}
 
-	biz := s.seg.info.Biz
-	if cli.services == nil {
-		cli.services = make(map[string]*IdService)
+	if cli.idsource == nil {
+		return nil, fmt.Errorf("tinyid is not initialized")
 	}
 
-	cli.services[biz] = s
-	return nil
+	info := IdInfo{Biz: biz}
+	service := NewIdService(&info, cli.idsource)
+	s, _ := cli.services.LoadOrStore(biz, service)
+
+	return s.(*IdService), nil
+}
+
+func Init(db *sql.DB) {
+	defaultTinyid.SetIdSource(NewSqlDB(db))
 }
 
 func Service(biz string) *IdService {
 	return defaultTinyid.Service(biz)
 }
 
-func AddService(s *IdService) error {
-	return defaultTinyid.AddService(s)
+func AddService(biz string) (*IdService, error) {
+	return defaultTinyid.AddService(biz)
 }

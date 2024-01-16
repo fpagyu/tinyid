@@ -36,9 +36,11 @@ func Test_NextId(t *testing.T) {
 
 	// id := NewIdService("pd_asset", NewSqlDB(db))
 	// id := (IdInfo{}).NewIdService(nil)
-	AddService(IdInfo{
-		Biz: "pd_asset",
-	}.NewIdService(NewSqlDB(db)))
+	// AddService(IdInfo{
+	// 	Biz: "pd_asset",
+	// }.NewIdService(NewSqlDB(db)))
+	Init(db)
+	AddService("pd_asset")
 
 	id := Service("pd_asset")
 	var wg sync.WaitGroup
